@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >= 0.8.0; 
+pragma solidity 0.8.0; 
 
 /**
  * @dev Provides information about the current execution context, including the
@@ -120,177 +120,23 @@ interface IERC20Metadata is IERC20 {
 
 
 /**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- */
-abstract contract Ownable is Context {
-    address private _owner;
-    address private _newOwner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor() {
-        _setOwner(_msgSender());
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        _setOwner(address(0));
-    }
-    
-    /**
-     * @dev Propose the new Owner of the smart contract 
-     */
-    function proposeOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _newOwner = newOwner;
-    }
-    
-    /**
-     * @dev Accept the ownership of the smart contract as a new Owner
-     */
-    function acceptOwnership() public {
-        require(msg.sender == _newOwner, "Ownable: caller is not the new owner");
-        emit OwnershipTransferred(_owner, _newOwner);
-        _owner = _newOwner;
-    }
-
-    function _setOwner(address newOwner) private {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-}
-
-
-/**
- * @dev ERC20 token with pausable token transfers, minting and burning. Useful for scenarios 
- * such as preventing trades until the end of an evaluation period, or having an emergency
- * switch for freezing all token transfers in the event of a large bug.
- */
-abstract contract Pausable is Context {
-    /**
-     * @dev Emitted when the pause is triggered by `account`.
-     */
-    event Paused(address account);
-
-    /**
-     * @dev Emitted when the pause is lifted by `account`.
-     */
-    event Unpaused(address account);
-
-    bool private _paused;
-
-    /**
-     * @dev Initializes the contract in unpaused state.
-     */
-    constructor() {
-        _paused = false;
-    }
-
-    /**
-     * @dev Returns true if the contract is paused, and false otherwise.
-     */
-    function paused() public view virtual returns (bool) {
-        return _paused;
-    }
-
-    /**
-     * @dev Modifier to make a function callable only when the contract is not paused.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
-    modifier whenNotPaused() {
-        require(!paused(), "Pausable: paused");
-        _;
-    }
-
-    /**
-     * @dev Modifier to make a function callable only when the contract is paused.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
-    modifier whenPaused() {
-        require(paused(), "Pausable: not paused");
-        _;
-    }
-
-    /**
-     * @dev Triggers stopped state.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
-    function _pause() internal virtual whenNotPaused {
-        _paused = true;
-        emit Paused(_msgSender());
-    }
-
-    /**
-     * @dev Returns to normal state.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
-    function _unpause() internal virtual whenPaused {
-        _paused = false;
-        emit Unpaused(_msgSender());
-    }
-}
-
-
-
-/**
  * @dev Implementation of the DGMV Token
  *  
  */
-contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
+contract DGMV is Context, IERC20, IERC20Metadata {
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-    uint8 private _decimal;
-
+    string constant private _name = "DigiMetaverse";
+    string constant private _symbol = "DGMV";
+    uint8  constant private _decimal = 18;
+    uint256 constant private _totalSupply = 1000000000 * (10 ** _decimal); // 1 Billion tokens
+    
     /**
      * @dev Sets the values for {name}, {symbol}, {total supply} and {decimal}.
      */
     constructor() {
-        _name = "DigiMetaverse";
-        _symbol = "DGMV";
-        _decimal = 18;
-        _totalSupply = 1000000000 * (10 ** _decimal);
         _balances[_msgSender()] = _totalSupply;
          emit Transfer(address(0), _msgSender(), _totalSupply);
     }
@@ -298,42 +144,42 @@ contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
     /**
      * @dev Returns Name of the token
      */
-    function name() public view virtual override returns (string memory) {
+    function name() external view virtual override returns (string memory) {
         return _name;
     }
     
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the name.
      */
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() external view virtual override returns (string memory) {
         return _symbol;
     }
     
     /**
      * @dev Returns the number of decimals used to get its user representation
      */
-    function decimals() public view virtual override returns (uint8) {
+    function decimals() external view virtual override returns (uint8) {
         return _decimal;
     }
     
     /**
      * @dev This will give the total number of tokens in existence.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() external view virtual override returns (uint256) {
         return _totalSupply;
     }
     
     /**
      * @dev Gets the balance of the specified address.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) external view virtual override returns (uint256) {
         return _balances[account];
     }
     
     /**
      * @dev Transfer token to a specified address and Emits a Transfer event.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -341,14 +187,14 @@ contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
     /**
      * @dev Function to check the number of tokens that an owner allowed to a spender
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(address owner, address spender) external view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
     
     /**
      * @dev Function to allow anyone to spend a token from your account and Emits an Approval event.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(address spender, uint256 amount) external virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -360,7 +206,7 @@ contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
         address sender,
         address recipient,
         uint256 amount
-    ) public virtual override returns (bool) {
+    ) external virtual override returns (bool) {
         _transfer(sender, recipient, amount);
 
         uint256 currentAllowance = _allowances[sender][_msgSender()];
@@ -375,7 +221,7 @@ contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
     /**
      * @dev Function to increase the allowance of another account
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) external virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
         return true;
     }
@@ -383,42 +229,22 @@ contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
     /**
      * @dev Function to decrease the allowance of another account
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         uint256 currentAllowance = _allowances[_msgSender()][spender];
         require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
         unchecked {
             _approve(_msgSender(), spender, currentAllowance - subtractedValue);
         }
-
         return true;
     }
     
-    /**
-     * @dev Function to pause all the transfer
-     * Only owner can do it
-     */  
-    function pause() external onlyOwner returns(bool) {
-        _pause();
-        return true;
-    }
-    
-    /**
-     * @dev Function to unpause all the transfer
-     * Only owner can do it
-     */  
-    function unpause() external onlyOwner returns(bool) {
-        _unpause();
-        return true;
-    }
-
     function _transfer(
         address sender,
         address recipient,
         uint256 amount
-    ) whenNotPaused()  internal virtual {
+    ) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
-      
         uint256 senderBalance = _balances[sender];
         require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
         unchecked {
@@ -439,9 +265,5 @@ contract DGMV is Context, IERC20, IERC20Metadata, Pausable, Ownable {
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
-    }
-
-    
+    } 
 }
-
-
