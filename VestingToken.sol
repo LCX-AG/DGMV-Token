@@ -249,7 +249,7 @@ contract DGMVTokenVesting is Ownable{
      * @notice Transfers vested tokens to beneficiary.
      * anyone can release their token 
      */
-    function releaseMyToken() public returns(bool) {
+    function releaseMyToken() external returns(bool) {
         releaseToken(msg.sender);
         return true;
     }
@@ -258,7 +258,7 @@ contract DGMVTokenVesting is Ownable{
      * @notice Transfers vested tokens to the given account.
      * @param account address of the vested user
      */
-    function releaseToken(address account) public {
+    function releaseToken(address account) external {
        require(account != address(0));
        VestedToken storage vested = vestedUser[account];
        uint256 unreleasedToken = _releasableAmount(account);  // total releasable token currently
