@@ -17,7 +17,7 @@ library SafeMath {
         }
 
         uint256 c = a * b;
-        require(c / a == b);
+        require(c / a == b,  "SafeMath: multiplication overflow");
 
         return c;
     }
@@ -27,7 +27,7 @@ library SafeMath {
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
        
-        require(b > 0);
+        require(b > 0, "SafeMath: division by zero");
         uint256 c = a / b;
        
         return c;
@@ -37,7 +37,7 @@ library SafeMath {
      * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
      */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
+        require(b <= a, "SafeMath: subtraction overflow");
         uint256 c = a - b;
 
         return c;
@@ -48,7 +48,7 @@ library SafeMath {
      */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
-        require(c >= a);
+        require(c >= a, "SafeMath: addition overflow");
 
         return c;
     }
@@ -58,7 +58,7 @@ library SafeMath {
      * reverts when dividing by zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
+        require(b != 0,  "SafeMath: modulo by zero");
         return a % b;
     }
 }
@@ -157,6 +157,7 @@ abstract contract Ownable is Context {
      */
     function acceptOwnership() public {
         require(msg.sender == _newOwner, "Ownable: caller is not the new owner");
+        require(_owner != address(0), "Ownable: ownership is renounched already");
         emit OwnershipTransferred(_owner, _newOwner);
         _owner = _newOwner;
     }
@@ -173,7 +174,7 @@ contract DGMVTokenVesting is Ownable{
     
     using SafeMath for uint256; 
     
-    address public DGMV_TOKEN; // Contract Address of DGMV Token
+    address public immutable DGMV_TOKEN; // Contract Address of DGMV Token
     
     struct VestedToken{
         uint256 cliff;
@@ -203,6 +204,7 @@ contract DGMVTokenVesting is Ownable{
      * @param startAt UNIX timestamp in seconds from where vesting will start
      */
      function setVesting(address account, uint256 amount, uint256 cliff, uint256 duration, uint256 startAt ) external returns(bool){
+         require(vestedUser[account].revoked);
          IERC20(DGMV_TOKEN).transferFrom(_msgSender(), address(this) ,amount);
          _setVesting(account, amount, cliff, duration, startAt);
          return true;
