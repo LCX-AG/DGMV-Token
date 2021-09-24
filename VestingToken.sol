@@ -204,7 +204,10 @@ contract DGMVTokenVesting is Ownable{
      * @param startAt UNIX timestamp in seconds from where vesting will start
      */
      function setVesting(address account, uint256 amount, uint256 cliff, uint256 duration, uint256 startAt ) external returns(bool){
-         require(vestedUser[account].revoked);
+         VestedToken storage vested = vestedUser[account];
+         if(vested.start > 0){
+             require(vested.revoked);
+         }
          IERC20(DGMV_TOKEN).transferFrom(_msgSender(), address(this) ,amount);
          _setVesting(account, amount, cliff, duration, startAt);
          return true;
