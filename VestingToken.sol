@@ -207,6 +207,8 @@ contract DGMVTokenVesting is Ownable{
          VestedToken storage vested = vestedUser[account];
          if(vested.start > 0){
              require(vested.revoked);
+             uint unclaimedTokens = _vestedAmount(account).sub(vested.releasedToken);
+             require(unclaimedTokens == 0);
          }
          IERC20(DGMV_TOKEN).transferFrom(_msgSender(), address(this) ,amount);
          _setVesting(account, amount, cliff, duration, startAt);
@@ -240,6 +242,7 @@ contract DGMVTokenVesting is Ownable{
       */
      function _setVesting(address account, uint256 amount, uint256 cliff, uint256 duration, uint256 startAt) internal {
          require(account!=address(0));
+         require(startAt >= block.timestamp);
          require(cliff<=duration);
          VestedToken storage vested = vestedUser[account];
          vested.cliff = cliff;
