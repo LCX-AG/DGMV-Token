@@ -1,6 +1,90 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0; 
+pragma solidity 0.8.0;
 
+
+/**
+ * @title SafeMath
+ * @dev Unsigned math operations with safety checks that revert on error
+ */
+library SafeMath {
+    /**
+     * @dev Multiplies two unsigned integers, reverts on overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b,  "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+       
+        require(b > 0, "SafeMath: division by zero");
+        uint256 c = a / b;
+       
+        return c;
+    }
+
+    /**
+     * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+     * @dev Adds two unsigned integers, reverts on overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
+     * reverts when dividing by zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0,  "SafeMath: modulo by zero");
+        return a % b;
+    }
+}
+/**
+* @title interface of ERC 20 token
+* 
+*/
+
+interface IERC20 {
+    function transfer(address to, uint256 value) external returns (bool);
+
+    function approve(address spender, uint256 value) external returns (bool);
+
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address who) external view returns (uint256);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+ 
 /**
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -20,19 +104,13 @@ abstract contract Context {
 }
 
 /**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
+ * @title Ownable
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
  */
 abstract contract Ownable is Context {
     address private _owner;
+    address private _newOwner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -40,7 +118,7 @@ abstract contract Ownable is Context {
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     constructor() {
-        _transferOwnership(_msgSender());
+        _setOwner(_msgSender());
     }
 
     /**
@@ -61,372 +139,185 @@ abstract contract Ownable is Context {
     /**
      * @dev Leaves the contract without owner. It will not be possible to call
      * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
      */
     function renounceOwnership() public virtual onlyOwner {
-        _transferOwnership(address(0));
+        _setOwner(address(0));
     }
 
     /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
+     * @dev Propose the new Owner of the smart contract 
      */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function proposeOwnership(address newOwner) public onlyOwner {
         require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _transferOwnership(newOwner);
+        _newOwner = newOwner;
     }
 
     /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
+     * @dev Accept the ownership of the smart contract as a new Owner
      */
-    function _transferOwnership(address newOwner) internal virtual {
+    function acceptOwnership() public {
+        require(msg.sender == _newOwner, "Ownable: caller is not the new owner");
+        require(_owner != address(0), "Ownable: ownership is renounched already");
+        emit OwnershipTransferred(_owner, _newOwner);
+        _owner = _newOwner;
+    }
+
+    function _setOwner(address newOwner) private {
         address oldOwner = _owner;
         _owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 }
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
-}
-/**
- * @dev Implementation of the DGMV Token
- *  
- */
-contract Envision is Ownable, IERC20, IERC20Metadata {
-    mapping(address => uint256) private _balances;
-    mapping (address => bool) private _isExcludedFromFee;
-    mapping(address => mapping(address => uint256)) private _allowances;
-
-    string constant private _name = "Envision";
-    string constant private _symbol = "VIS";
-    uint8  constant private _decimal = 18;
-    uint256 private _totalSupply = 200000000 * (10 ** _decimal); // 200 million tokens
-    uint256 constant public _taxBurn = 2;
-    uint256 constant public _taxLiquidity = 5;
-    address public teamWallet;
-    uint256 public toBurnAmount = 0;
-
-    event teamWalletChanged(address oldWalletAddress, address newWalletAddress);
-    event feeCollected(address teamWallet, uint256 amount);
-    event excludingAddressFromFee(address account);
-    event includingAddressInFee(address account);
-
-    modifier onlyTeamWallet() {
-        require(teamWallet == _msgSender(), "Caller is not the teamwallet");
-        _;
-    }
-
+contract DGMVTokenVesting is Ownable{
     
-    /**
-     * @dev Sets the values for {name}, {symbol}, {total supply} and {decimal}.
-     * Currently teamWallet will be Owner and can be changed later
+    using SafeMath for uint256; 
+    
+    address public immutable DGMV_TOKEN; // Contract Address of DGMV Token
+    
+    struct VestedToken{
+        uint256 cliff;
+        uint256 start;
+        uint256 duration;
+        uint256 releasedToken;
+        uint256 totalToken;
+        bool revoked;
+    }
+    
+    mapping (address => VestedToken) public vestedUser; 
+    event TokenReleased(address indexed account, uint256 amount);
+    event VestingRevoked(address indexed account);
+    
+    constructor (address dgmv_token){
+        require(dgmv_token != address(0));
+        DGMV_TOKEN = dgmv_token;
+    }
+  
+     /**
+     * @dev this will set the beneficiary with vesting 
+     * parameters provided
+     * @param account address of the beneficiary for vesting
+     * @param amount  totalToken to be vested
+     * @param cliff In seconds of one period in vesting
+     * @param duration In seconds of total vesting 
+     * @param startAt UNIX timestamp in seconds from where vesting will start
      */
-    constructor(address _teamWallet) {
-        require(_teamWallet!=address(0), "Cannot set teamwallet as zero address");
-        _balances[_msgSender()] = _totalSupply;
-        _isExcludedFromFee[_msgSender()] = true;
-        _isExcludedFromFee[address(this)] = true;
-        _isExcludedFromFee[_teamWallet] = true;
-        teamWallet = _teamWallet;  
-        emit Transfer(address(0), _msgSender(), _totalSupply);
+     function setVesting(address account, uint256 amount, uint256 cliff, uint256 duration, uint256 startAt ) external returns(bool){
+         VestedToken storage vested = vestedUser[account];
+         if(vested.start > 0){
+             require(vested.revoked);
+             uint unclaimedTokens = _vestedAmount(account).sub(vested.releasedToken);
+             require(unclaimedTokens == 0);
+         }
+         IERC20(DGMV_TOKEN).transferFrom(_msgSender(), address(this) ,amount);
+         _setVesting(account, amount, cliff, duration, startAt);
+         return true;
+     }
+     
+     /**
+     * @dev Calculates the amount that has already vested.
+     * @param account address of the user
+     */
+     function vestedToken(address account) external view returns (uint256) {
+       return _vestedAmount(account);
     }
     
     /**
-     * @dev Returns Name of the token
+     * @dev Calculates the amount that has already vested but hasn't been released yet.
+     * @param account address of user
      */
-    function name() external view virtual override returns (string memory) {
-        return _name;
+     function releasableToken(address account) external view returns (uint256) {
+       return _vestedAmount(account).sub(vestedUser[account].releasedToken);
     }
-    
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the name.
-     */
-    function symbol() external view virtual override returns (string memory) {
-        return _symbol;
-    }
-    
-    /**
-     * @dev Returns the number of decimals used to get its user representation
-     */
-    function decimals() external view virtual override returns (uint8) {
-        return _decimal;
-    }
-    
-    /**
-     * @dev This will give the total number of tokens in existence.
-     */
-    function totalSupply() external view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-    
-    /**
-     * @dev Gets the balance of the specified address.
-     */
-    function balanceOf(address account) external view virtual override returns (uint256) {
-        return _balances[account];
-    }
-    
-    /**
-     * @dev Returns collected fees of the token
-     */
-    function collectedFees() external view returns (uint256) {
-        return _balances[address(this)];
-    }
+     
+     /**
+      * @dev Internal function to set default vesting parameters
+      * @param account address of the beneficiary for vesting
+      * @param amount  totalToken to be vested
+      * @param cliff In seconds of one period in vestin
+      * @param duration In seconds of total vesting duration
+      * @param startAt UNIX timestamp in seconds from where vesting will start
+      *
+      */
+     function _setVesting(address account, uint256 amount, uint256 cliff, uint256 duration, uint256 startAt) internal {
+         require(account!=address(0));
+         require(startAt >= block.timestamp);
+         require(cliff<=duration);
+         VestedToken storage vested = vestedUser[account];
+         vested.cliff = cliff;
+         vested.start = startAt;
+         vested.duration = duration;
+         vested.totalToken = amount;
+         vested.releasedToken = 0;
+         vested.revoked = false;
+     }
 
     /**
-     * @dev Transfer token to a specified address and Emits a Transfer event.
+     * @notice Transfers vested tokens to beneficiary.
+     * anyone can release their token 
      */
-    function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
+    function releaseMyToken() external returns(bool) {
+        releaseToken(msg.sender);
         return true;
     }
     
-    /**
-     * @dev Function to check the number of tokens that an owner allowed to a spender
+     /**
+     * @notice Transfers vested tokens to the given account.
+     * @param account address of the vested user
      */
-    function allowance(address owner, address spender) external view virtual override returns (uint256) {
-        return _allowances[owner][spender];
+    function releaseToken(address account) public {
+       require(account != address(0));
+       VestedToken storage vested = vestedUser[account];
+       uint256 unreleasedToken = _releasableAmount(account);  // total releasable token currently
+       require(unreleasedToken>0);
+       vested.releasedToken = vested.releasedToken.add(unreleasedToken);
+       IERC20(DGMV_TOKEN).transfer(account,unreleasedToken);
+       emit TokenReleased(account, unreleasedToken);
     }
     
     /**
-     * @dev Function to allow anyone to spend a token from your account and Emits an Approval event.
+     * @dev Calculates the amount that has already vested but hasn't been released yet.
+     * @param account address of user
      */
-    function approve(address spender, uint256 amount) external virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
+    function _releasableAmount(address account) internal view returns (uint256) {
+        return _vestedAmount(account).sub(vestedUser[account].releasedToken);
+    }
+
+  
+    /**
+     * @dev Calculates the amount that has already vested.
+     * @param account address of the user
+     */
+    function _vestedAmount(address account) internal view returns (uint256) {
+        VestedToken storage vested = vestedUser[account];
+        uint256 totalToken = vested.totalToken;
+        if(block.timestamp <  vested.start.add(vested.cliff)){
+            return 0;
+        }else if(block.timestamp >= vested.start.add(vested.duration) || vested.revoked){
+            return totalToken;
+        }else{
+            uint256 numberOfPeriods = (block.timestamp.sub(vested.start)).div(vested.cliff);
+            return totalToken.mul(numberOfPeriods.mul(vested.cliff)).div(vested.duration);
+        }
+    }
+    
+    /**
+     * @notice Allows the owner to revoke the vesting. Tokens already vested
+     * remain in the contract, the rest are returned to the owner.
+     * @param account address in which the vesting is revoked
+     */
+    function revoke(address account) external onlyOwner returns(bool) {
+        VestedToken storage vested = vestedUser[account];
+        require(!vested.revoked);
+        uint256 balance = vested.totalToken;
+        uint256 vestedAmount = _vestedAmount(account);
+        uint256 refund = balance.sub(vestedAmount);
+        require(refund > 0);
+        vested.revoked = true;
+        vested.totalToken = vestedAmount;
+        IERC20(DGMV_TOKEN).transfer(owner(), refund);
+        emit VestingRevoked(account);
         return true;
     }
-    /**
-     * @dev owner can make exclude the account from paying fee on transfer
-     */
-    function excludeFromFee(address account) external onlyOwner {
-        require(account!=address(0), "Excluding for the zero address");
-        _isExcludedFromFee[account] = true;
-        emit excludingAddressFromFee(account);
-    }
-    /**
-     * @dev check if account is excluded from fee
-     */
-    function isExcludedFromFee(address account) external view returns(bool) {
-        return _isExcludedFromFee[account];
-    }
-
-    /**
-     * @dev owner can make the account pay fee on transfer.
-     */
-    function includeInFee(address account) external onlyOwner {
-        require(account!=address(0), "Including for the zero address");
-        _isExcludedFromFee[account] = false;
-        emit includingAddressInFee(account);
-    }
-
-    /**
-     * @dev owner can claim collected fees.
-     */
-    function collectFees() external onlyOwner {
-        uint256 fees = _balances[address(this)];
-        _transfer(address(this), teamWallet, _balances[address(this)]);
-        emit feeCollected(teamWallet, fees);
-    }
-
-    /**
-     * @dev teamWallet can burn collected burn fees.
-     */
-    function burnCollectedFees() external onlyTeamWallet {
-        require(_balances[teamWallet] >= toBurnAmount, "Does not have the required amount of tokens to burn");
-        _transfer(teamWallet, address(0), toBurnAmount);
-        unchecked {
-            _totalSupply -= toBurnAmount;
-        }
-        toBurnAmount = 0;
-        emit feeCollected(address(0), toBurnAmount);
-    }
-
-    /**
-     * @dev owner can update the collection team wallet
-     */
-    function updateTeamWallet(address _teamWallet) external onlyOwner {
-        require(_teamWallet!=address(0), "Cannot set teamwallet as zero address");
-        address oldWallet = teamWallet;
-        teamWallet =  _teamWallet;
-        _isExcludedFromFee[_teamWallet] = true;
-        _isExcludedFromFee[oldWallet] = false;
-        emit teamWalletChanged(oldWallet,_teamWallet);
-    }
-    
-    /**
-     * @dev Function to transfer allowed token from other's account
-     */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        unchecked {
-            _approve(sender, _msgSender(), currentAllowance - amount);
-        }
-
-        return true;
-    }
-    
-    /**
-     * @dev Function to increase the allowance of another account
-     */
-    function increaseAllowance(address spender, uint256 addedValue) external virtual returns (bool) {
-        require(spender!=address(0), "Increasing allowance for zero address");
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-    
-    /**
-     * @dev Function to decrease the allowance of another account
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
-        require(spender!=address(0), "Decreasing allowance for zero address");
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        unchecked {
-            _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-        }
-        return true;
-    }
-    
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual {
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        unchecked {
-            _balances[sender] = senderBalance - amount;
-        }
-        if(_isExcludedFromFee[sender]) {
-            unchecked {//condititon to exclude
-                _balances[recipient] += amount;
-            }
-        }else{ 
-            unchecked {
-                uint256 burnFee =  (amount * _taxBurn) / 1000;
-                uint256 tFee = (amount * (_taxBurn + _taxLiquidity)) / 1000;
-                _balances[recipient] += amount - tFee;
-                _balances[address(this)] +=  tFee;
-                toBurnAmount += burnFee;
-            }
-        }
-        emit Transfer(sender, recipient, amount);
-    }
-
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    } 
 }
